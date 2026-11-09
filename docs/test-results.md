@@ -112,3 +112,4 @@ All negative tests produce JSON matching this contract:
 }
 ```
 Stack traces are never exposed in responses.
+

@@ -88,3 +88,4 @@ router.put('/:id', authMiddleware, updateProductValidation, validate, productCon
 router.delete('/:id', authMiddleware, productController.deleteProduct);
 
 module.exports = router;
+

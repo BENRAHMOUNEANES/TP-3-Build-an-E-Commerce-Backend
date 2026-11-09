@@ -426,3 +426,4 @@ const runSuite = async () => {
 };
 
 runSuite();
+

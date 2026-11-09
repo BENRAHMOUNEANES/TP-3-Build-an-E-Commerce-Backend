@@ -80,3 +80,4 @@ productSchema.pre('validate', function () {
 const Product = mongoose.model('Product', productSchema);
 
 module.exports = Product;
+

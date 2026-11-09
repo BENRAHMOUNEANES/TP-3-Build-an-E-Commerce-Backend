@@ -443,3 +443,4 @@ In TD-TP 2, product data was imported statically from `src/data/products.js`. Wi
 - **Git Hygiene:** `.env` is verified untracked by Git; `.env.example` provides sanitized variable placeholders only.
 - **Error Obfuscation:** Database stack traces and sensitive server paths are suppressed from error payloads.
 - **Generic Auth Errors:** The login endpoint returns identical `"Invalid email or password"` messages regardless of whether the email or password was incorrect, preventing account enumeration.
+

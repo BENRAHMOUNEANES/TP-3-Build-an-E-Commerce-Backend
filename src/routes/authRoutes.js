@@ -67,3 +67,4 @@ router.post('/login', loginLimiter, loginValidation, validate, authController.lo
 router.get('/me', authMiddleware, authController.getMe);
 
 module.exports = router;
+

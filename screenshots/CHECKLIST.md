@@ -91,3 +91,4 @@ This checklist details every screenshot required for the lab submission. You can
 
 - [ ] **20_postman_oauth2_config.png**
   - **Capture:** Postman "Authorization" tab displaying the OAuth 2.0 configuration with `Grant Type: Authorization Code (With PKCE)`, Auth URL, Token URL, Client ID, and scopes (`openid email profile`).
+
