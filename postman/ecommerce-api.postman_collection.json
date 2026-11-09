@@ -1,0 +1,969 @@
+{
+  "info": {
+    "_postman_id": "e2a48b9c-7d35-412f-87a2-dztech2026wamd",
+    "name": "DzTech Store E-Commerce REST API (ENSTA WAMD TD-TP 3)",
+    "description": "Comprehensive Postman test collection for DzTech Store backend REST API. Covers authentication, CRUD operations, input validation, rate limiting, and OAuth 2.0 authorization.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "oauth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Health Check",
+      "item": [
+        {
+          "name": "GET Health Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is operational', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.status).to.eql(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Authentication",
+      "item": [
+        {
+          "name": "Register New User (201 Created)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Anes Benrahmoune\",\n  \"email\": \"anes.demo@dztech.dz\",\n  \"password\": \"SecurePass2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response does not leak passwordHash', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.user.passwordHash).to.be.undefined;",
+                  "    pm.expect(json.data.user.email).to.eql('anes.demo@dztech.dz');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Existing Email (409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate Anes\",\n  \"email\": \"anes.demo@dztech.dz\",\n  \"password\": \"AnotherPass2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('Error response follows standard format', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "    pm.expect(json.status).to.eql(409);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Invalid Data (400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"email\": \"invalid-email-format\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Validation details returned', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "    pm.expect(json.errors).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Valid Credentials (200 OK -> Save JWT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"anes.demo@dztech.dz\",\n  \"password\": \"SecurePass2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test('Token received and stored in collection variable', function () {",
+                  "    pm.expect(json.data.token).to.be.a('string');",
+                  "    pm.collectionVariables.set('jwt_token', json.data.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Incorrect Password (401 Generic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"anes.demo@dztech.dz\",\n  \"password\": \"WrongSecretPassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Generic error message returned', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Invalid email or password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Non-Existent Email (401 Generic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody@nowhere.com\",\n  \"password\": \"AnyPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Generic error message returned', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Invalid email or password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Profile Me (200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Products (Public)",
+      "item": [
+        {
+          "name": "List All Products (200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.length > 0) {",
+                  "    pm.collectionVariables.set('productId', json.data[0]._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter Products By Category (200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?category=Ordinateurs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Ordinateurs"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Single Product by Valid ID (200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Product With Malformed ID (400 Bad Request)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/invalid-hex-id-999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "invalid-hex-id-999"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Product Not Found (404 Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/660e1f72b5368a2f8c5b9999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "660e1f72b5368a2f8c5b9999"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Products (Protected - JWT)",
+      "item": [
+        {
+          "name": "Create Product Without Token (401 Unauthorized)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Unauthorized Drone\",\n  \"price\": 499\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Product With Invalid Token (401 Unauthorized)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer forged.invalid.token"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Forged Token Drone\",\n  \"price\": 499\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Product With Missing/Invalid Data (400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"price\": -99\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Product Valid (201 Created -> Save ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Razer BlackWidow V4 Pro\",\n  \"category\": \"Gaming\",\n  \"price\": 229.99,\n  \"description\": \"Mechanical gaming keyboard with immersive underglow lighting and magnetic wrist rest.\",\n  \"stock\": 14,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data._id) {",
+                  "    pm.collectionVariables.set('productId', json.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Product (200 OK)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 199.99,\n  \"stock\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test('Fields successfully updated', function () {",
+                  "    pm.expect(json.data.price).to.eql(199.99);",
+                  "    pm.expect(json.data.stock).to.eql(25);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Product Malformed ID (400 Bad Request)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/bad-id-string",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "bad-id-string"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Product Not Found (404 Not Found)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/660e1f72b5368a2f8c5b9999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "660e1f72b5368a2f8c5b9999"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Product Without Token (401 Unauthorized)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Product (200 OK)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Product Already Removed (404 Not Found)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Rate Limiting",
+      "item": [
+        {
+          "name": "Login Rate Limit 1 (401 Allowed)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"ratelimit@dztech.dz\",\"password\":\"Wrong1\"}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login Rate Limit 2 (401 Allowed)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"ratelimit@dztech.dz\",\"password\":\"Wrong2\"}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login Rate Limit 3 (401 Allowed)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"ratelimit@dztech.dz\",\"password\":\"Wrong3\"}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login Rate Limit 4 (401 Allowed)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"ratelimit@dztech.dz\",\"password\":\"Wrong4\"}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login Rate Limit 5 (401 Allowed - 0 remaining)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"ratelimit@dztech.dz\",\"password\":\"Wrong5\"}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login Rate Limit 6 (429 Too Many Requests)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"ratelimit@dztech.dz\",\"password\":\"Wrong6\"}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 429 Too Many Requests', function () {",
+                  "    pm.response.to.have.status(429);",
+                  "});",
+                  "pm.test('Has standard RateLimit headers', function () {",
+                  "    pm.expect(pm.response.headers.has('ratelimit-limit') || pm.response.headers.has('RateLimit-Limit')).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - OAuth 2.0 (OpenID Connect)",
+      "item": [
+        {
+          "name": "Protected Endpoint with OAuth2 Access/ID Token",
+          "request": {
+            "auth": {
+              "type": "oauth2",
+              "oauth2": [
+                { "key": "authUrl", "value": "https://accounts.google.com/o/oauth2/v2/auth", "type": "string" },
+                { "key": "accessTokenUrl", "value": "https://oauth2.googleapis.com/token", "type": "string" },
+                { "key": "clientId", "value": "{{oauth_client_id}}", "type": "string" },
+                { "key": "clientSecret", "value": "{{oauth_client_secret}}", "type": "string" },
+                { "key": "scope", "value": "openid email profile", "type": "string" },
+                { "key": "redirect_uri", "value": "https://oauth.pstmn.io/v1/callback", "type": "string" },
+                { "key": "grant_type", "value": "authorization_code_with_pkce", "type": "string" },
+                { "key": "useBrowser", "value": true, "type": "boolean" },
+                { "key": "tokenType", "value": "Bearer", "type": "string" },
+                { "key": "addTokenTo", "value": "header", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{oauth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"OAuth2 Verified Device\",\n  \"category\": \"Smartphones\",\n  \"price\": 899.00,\n  \"description\": \"Created via verified Google OAuth 2.0 PKCE token.\",\n  \"stock\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 201 when valid OAuth token is provided or 401 when missing/expired', function () {",
+                  "    pm.expect([201, 401]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
