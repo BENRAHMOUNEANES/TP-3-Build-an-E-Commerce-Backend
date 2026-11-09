@@ -1,0 +1,42 @@
+{
+  "name": "dztech-ecommerce-backend",
+  "version": "1.0.0",
+  "description": "REST API backend for DzTech Store - ENSTA WAMD TD-TP 3",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/seed/seedProducts.js",
+    "test": "node test/run-all-tests.js",
+    "test:ratelimit": "node test/test-rate-limit.js"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "mongoose",
+    "jwt",
+    "oauth2",
+    "rest-api",
+    "ensta",
+    "ecommerce"
+  ],
+  "author": "Anes Benrahmoune",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.3",
+    "express-validator": "^7.3.2",
+    "google-auth-library": "^11.3.3",
+    "jose": "^6.2.16",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.12.0"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0",
+    "nodemon": "^3.1.14"
+  }
+}
