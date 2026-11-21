@@ -17,9 +17,17 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Editor directories
+# Editor and tool directories
 .idea/
 .vscode/
+.postman/
+postman/collections/
+postman/documents/
+postman/environments/
+postman/flows/
+postman/globals/
+postman/mocks/
+postman/specs/
 *.suo
 *.ntvs*
 *.njsproj
